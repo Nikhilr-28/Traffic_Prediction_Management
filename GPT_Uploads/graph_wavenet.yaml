@@ -1,0 +1,122 @@
+# Graph WaveNet Configuration
+name: graph_wavenet
+architecture: GraphWaveNet
+
+# Model architecture parameters
+model:
+  # Temporal convolution settings
+  temporal:
+    kernel_size: 2
+    n_layers: 8
+    dilation_exponential: 2  # 1, 2, 4, 8, ...
+    
+  # Graph convolution settings
+  graph:
+    support_len: 2  # Number of adjacency matrices (geo + adaptive)
+    gcn_depth: 2
+    
+  # Hidden dimensions
+  hidden_dim: 32
+  skip_dim: 256
+  end_dim: 512
+  
+  # Input/Output
+  input_dim: 1  # Speed only (can be extended with features)
+  output_dim: 12  # 12 timesteps = 60 minutes / 5 minute intervals
+  
+  # Adaptive adjacency
+  adaptive_adj:
+    enabled: true
+    embed_dim: 10
+    
+  # Dropout for regularization
+  dropout: 0.3
+
+# Training configuration
+training:
+  # Optimization
+  optimizer: adam
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  
+  # Learning rate scheduling
+  scheduler:
+    type: step
+    step_size: 10
+    gamma: 0.5
+  
+  # Training parameters
+  batch_size: 32
+  epochs: 100
+  gradient_clip_val: 5.0
+  
+  # Loss function
+  loss:
+    type: huber  # More stable than pure MAE
+    delta: 1.0
+    
+  # Congestion-weighted loss
+  congestion_weighted:
+    enabled: true
+    weight_factor: 4.0  # 5x weight when at standstill
+    congestion_threshold: 0.4  # < 40% of free-flow
+  
+  # Teacher forcing with scheduled sampling
+  teacher_forcing:
+    initial_ratio: 1.0
+    decay_rate: 0.02
+    min_ratio: 0.5
+  
+  # Exponential moving average
+  ema:
+    enabled: true
+    decay: 0.999
+  
+  # Mixed precision training (RTX 4080)
+  amp:
+    enabled: true
+    
+  # GPU settings
+  gpu:
+    enabled: true
+    device_id: 0
+    cudnn_benchmark: true
+    compile: true  # Try torch.compile
+
+# Validation
+validation:
+  batch_size: 64
+  metrics:
+    - mae
+    - rmse
+    - mape
+    - congestion_weighted_mae
+  
+# Inference optimization
+inference:
+  # Export settings
+  export_format: torchscript  # Not ONNX for PyG
+  quantization:
+    enabled: true
+    type: dynamic_int8
+    
+  # Batching
+  micro_batch_window_ms: 15
+  max_batch_size: 32
+  group_by_locality: true
+  
+  # CPU optimization
+  pin_cores: true
+  num_threads: 4
+  
+  # Online calibration
+  bias_correction:
+    enabled: true
+    ema_decay: 0.95
+    
+# Model checkpointing
+checkpoint:
+  monitor: val_congestion_weighted_mae
+  mode: min
+  save_top_k: 3
+  save_last: true

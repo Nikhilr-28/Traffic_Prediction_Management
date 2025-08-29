@@ -1,0 +1,65 @@
+# PEMS-BAY Dataset Configuration
+name: pems_bay
+dataset: PEMS-BAY
+
+# Data source paths
+paths:
+  raw_data: ${paths.data}/raw/pems-bay
+  processed_data: ${paths.data}/processed/pems-bay
+  adjacency_matrix: ${paths.processed_data}/adj_mx.pkl
+  sensor_data: ${paths.raw_data}/pems-bay.h5
+  osm_extract: ${paths.data}/raw/osm/san_francisco_bay.osm.pbf
+
+# Dataset characteristics
+num_sensors: 325
+time_steps_per_day: 288  # 5-minute intervals
+sample_rate_minutes: 5
+
+# Temporal settings
+lookback_window: 12  # 1 hour of history
+prediction_horizons: [3, 6, 9, 12]  # 15, 30, 45, 60 minutes
+
+# Data partitioning
+partition:
+  train_ratio: 0.7
+  val_ratio: 0.15
+  test_ratio: 0.15
+  # Strict temporal split - no shuffling
+  temporal_split: true
+
+# Adjacency matrix settings
+adjacency:
+  # Geographic k-nearest neighbors
+  geo_k: 10
+  distance_threshold_km: 2.0
+  # Adaptive adjacency (learned)
+  use_adaptive: true
+  
+# Feature engineering
+features:
+  time_of_day: true
+  day_of_week: true
+  is_holiday: true
+  speed_limit: true
+  road_type: true
+  
+# Preprocessing
+preprocessing:
+  normalize_method: z_score  # or min_max
+  fill_missing: forward_fill
+  speed_limits:
+    min_speed_mph: 0
+    max_speed_mph: 80
+    
+# Sensor to edge mapping
+mapping:
+  direction_aware: true
+  split_edges_at_sensors: true
+  interpolation_method: idw  # inverse distance weighting
+  max_interpolation_distance_km: 2.0
+  
+# Data quality checks
+quality_checks:
+  min_coverage_percent: 80
+  max_missing_percent: 20
+  validate_speed_ranges: true

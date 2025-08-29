@@ -1,0 +1,65 @@
+# Main configuration file - composes all sub-configs
+defaults:
+  - data: pems_bay
+  - model: graph_wavenet
+  - routing: osrm
+  - _self_
+
+# General settings
+project_name: traffic_prediction_system
+experiment_name: ${model.name}_${data.name}_${now:%Y%m%d_%H%M%S}
+seed: 42
+
+# Paths (relative to project root)
+paths:
+  root: ${hydra:runtime.cwd}
+  data: ${paths.root}/data
+  logs: ${paths.root}/logs
+  checkpoints: ${paths.data}/checkpoints
+  reports: ${paths.data}/reports
+
+# System settings
+device: cuda  # or cpu
+num_workers: 4
+pin_memory: true
+
+# Redis configuration
+redis:
+  host: localhost
+  port: 6379
+  db: 0
+  generation_number: 1
+  
+# API settings
+api:
+  host: 0.0.0.0
+  port: 8000
+  workers: 1
+  reload: true
+  
+# Logging
+logging:
+  level: INFO
+  format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+
+# MLflow
+mlflow:
+  tracking_uri: file:./mlruns
+  experiment_name: ${experiment_name}
+
+# Performance targets (SLOs)
+performance:
+  latency_p50_ms: 200
+  latency_p95_ms: 500
+  min_cache_hit_rate: 0.8
+  max_prediction_age_seconds: 5
+
+# Hydra configuration
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  job:
+    name: ${project_name}
+    chdir: true

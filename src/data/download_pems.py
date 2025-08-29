@@ -1,16 +1,16 @@
 # src/data/download_pems.py
 from __future__ import annotations
+
 from pathlib import Path
 import pickle
 import sys
 
+
 RAW_DIR = Path("data/raw/pems-bay")
 RAW_DIR.mkdir(parents=True, exist_ok=True)
 
-# put near the top of both src/data/download_pems.py and src/data/process_pems.py
-import pickle
 
-def load_pickle_compat(path):
+def load_pickle_compat(path: Path):
     with open(path, "rb") as f:
         try:
             return pickle.load(f)  # works if py3-pickled
@@ -19,7 +19,7 @@ def load_pickle_compat(path):
             return pickle.load(f, encoding="latin1")  # py2 compatibility
 
 
-def verify_adj_pickle(pkl_path):
+def verify_adj_pickle(pkl_path: Path):
     obj = load_pickle_compat(pkl_path)
     if not isinstance(obj, (tuple, list)) or len(obj) != 3:
         raise ValueError("adj_mx_bay.pkl must be (sensor_ids, id2idx, adj_mx)")
@@ -29,9 +29,11 @@ def verify_adj_pickle(pkl_path):
     print(f"[OK] adj pickle: sensors={n_sensors}, adj_shape={adj_shape}")
     return sensor_ids, id2idx, adj_mx
 
+
 def find_first_2d_dataset(h5):
     """Return (name, dataset) for first 2D h5py.Dataset found."""
     import h5py
+
     def _walk(g, prefix=""):
         for k, v in g.items():
             name = f"{prefix}/{k}" if prefix else k
@@ -42,7 +44,9 @@ def find_first_2d_dataset(h5):
                 if res is not None:
                     return res
         return None
+
     return _walk(h5)
+
 
 def verify_h5(h5_path: Path):
     try:
@@ -57,6 +61,7 @@ def verify_h5(h5_path: Path):
         name, dset = found
         print(f"[OK] HDF5 dataset '{name}' shape={dset.shape}")
         return name, dset.shape
+
 
 def main():
     adj = RAW_DIR / "adj_mx_bay.pkl"
@@ -74,6 +79,7 @@ def main():
 
     print("Done. If both are verified, run: python -m src.data.process_pems")
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())
